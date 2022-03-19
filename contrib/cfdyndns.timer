@@ -1,0 +1,10 @@
+[Unit]
+Description=Run cfdyndns every 10 minutes
+After=network-online.target
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target
