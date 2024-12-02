@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/rmbreak/cfdyndns/internal/cloudflare"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -40,9 +39,9 @@ func getPublicIP(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(content)), nil
 }
 
-func updateDomainRecord(ctx context.Context, cfToken string, domain string, ip string) error {
+func updateDomainRecord(ctx context.Context, cfToken string, zoneId string, recordId string, domain string, ip string) error {
 	cloudflareClient := cloudflare.New(cfToken)
-	resp, err := cloudflareClient.UpdateDnsRecord(ctx, "", "", cloudflare.DnsUpdateRequestData{
+	resp, err := cloudflareClient.UpdateDnsRecord(ctx, zoneId, recordId, cloudflare.DnsUpdateRequestData{
 		Type:    "A",
 		Name:    domain,
 		Content: ip,
@@ -63,10 +62,6 @@ func updateDomainRecord(ctx context.Context, cfToken string, domain string, ip s
 
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
-
-	if err := godotenv.Load(); err != nil {
-		log.Fatal().Msgf("%v", err)
-	}
 
 	logLevel := zerolog.InfoLevel
 	if os.Getenv("LOG_LEVEL") != "" {
@@ -94,7 +89,7 @@ func main() {
 	log.Info().Msgf("Found public IP: %s", ip)
 
 	log.Info().Msgf("Updating %s A record to %s", domain, ip)
-	err = updateDomainRecord(ctx, cfToken, domain, ip)
+	err = updateDomainRecord(ctx, cfToken, os.Getenv("ZONE_ID"), os.Getenv("RECORD_ID"), domain, ip)
 	if err != nil {
 		log.Fatal().Msgf("failed to update domain record: %v", err)
 	}
